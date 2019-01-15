@@ -18,6 +18,6 @@ s.t
   int: x1, x2
 ```
 
-The algorithm written will solve the problem and then output a tree graph to facilitate a visual look on how the algorithm works.
+The algorithm written will solve the problem and then output a tree graph that facilitates a visual look on how the algorithm works.
 
 <img src="https://raw.githubusercontent.com/OdinTech3/IP-Visualizer/assets/bb_output.png">
