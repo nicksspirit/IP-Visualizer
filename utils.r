@@ -46,7 +46,7 @@ get_varname <- function(dvars, branch_val) {
   )
 }
 
-constr_coeffs <- function(dvars, branch_val) {
+create_constr_coeffs <- function(dvars, branch_val) {
 #' @title Create numeric vector containing the constraint coefficients
 #' @description The vector is the same length and the length of
 #' the descision varialbles dvars.
