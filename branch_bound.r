@@ -1,32 +1,6 @@
 library("lpSolveAPI")
-library("magrittr")
 library("igraph")
-
-is_int <- function(n) {
-    return(as.integer(n) == n)
-}
-
-branch_on <- function(sols) {
-    non_ints <- subset(sols, !is_int(sols))
-
-    if (length(non_ints) == 0) {
-        return(0)
-    }
-
-    return(max(non_ints))
-}
-
-get.branch_name <- function(bounded_sol, branch_val) {
-    return(bounded_sol %>% names() %>% extract(match(branch_val, bounded_sol)))
-}
-
-get.branch_vec <- function(branch_name) {
-    switch(branch_name,
-        "x1" = c(1, 0),
-        "x2" = c(0, 1),
-        c(0, 0) # default case
-    )
-}
+source("./utils.r")
 
 fmt <- function(sol) {
     return(sprintf(
