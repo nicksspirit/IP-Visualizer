@@ -32,14 +32,14 @@ solve(ip_prob)
 
 ub_sol <- create_sol(get.objective(ip_prob), get.variables(ip_prob))
 root <- fmt(ub_sol)
-G <- make_tree(0, 2) + vertex(root)
+tree <- make_tree(0, 2) + vertex(root)
 
-branch_bound <- function(upper_bound, ip_prob, graph, root) {
-    branch_val <- upper_bound %>% extract(c("x1", "x2")) %>% branch_on()
+branch_bound <- function(upper_bound, ip_prob, tree, root) {
+    branch_val <- upper_bound %>% get_dvars() %>% branch_on()
 
     if (branch_val == 0) {
-        plot(graph,
-            layout = layout.reingold.tilford(graph),
+        plot(tree,
+            layout = layout.reingold.tilford(tree),
             vertex.size = 50,
             edge.label.cex = 0.7,
             vertex.label.cex = 0.7,
@@ -48,22 +48,23 @@ branch_bound <- function(upper_bound, ip_prob, graph, root) {
         return(ip_prob)
     }
 
-    branch_var <- get.branch_name(upper_bound, branch_val)
-    branch_vec <- get.branch_vec(branch_var)
-    var_floored <- floor(branch_val)
-    var_ceiled <- ceiling(branch_val)
+    dvars <- get_dvars(upper_bound)
+    branch_var <- get_varname(dvars, branch_val)
+    constrs <- constr_coeffs(dvars, branch_val)
+    dvar_floored <- floor(branch_val)
+    dvar_ceiled <- ceiling(branch_val)
 
-    # Left Side
-    left_ip_prob <- ip_prob %T>% add.constraint(branch_vec, "<=", var_floored)
+    # Solving problem for the left side of the tree
+    left_ip_prob <- ip_prob %T>% add.constraint(constrs, "<=", dvar_floored)
     left_status <- solve(left_ip_prob)
     left_ub_sol <- create_sol(
         get.objective(left_ip_prob),
         get.variables(left_ip_prob)
     )
-
+    # Creating the left child node of tree
     left_node <- if (left_status == 0) fmt(left_ub_sol) else "Infeasible"
-    left_label <- sprintf("%s <= %d", branch_var, var_floored)
-    graph <- graph +
+    left_label <- sprintf("%s <= %d", branch_var, dvar_floored)
+    tree <- tree +
         vertex(left_node) +
         edge(root, left_node, label = left_label)
 
@@ -73,16 +74,17 @@ branch_bound <- function(upper_bound, ip_prob, graph, root) {
         length() %>%
         delete.constraint(left_ip_prob, .)
 
-    # Right Side
-    right_ip_prob <- ip_prob %T>% add.constraint(branch_vec, ">=", var_ceiled)
+    # Solving problem for the right side of the tree
+    right_ip_prob <- ip_prob %T>% add.constraint(constrs, ">=", dvar_ceiled)
     right_status <- solve(right_ip_prob)
     right_ub_sol <- create_sol(
         get.objective(right_ip_prob),
         get.variables(right_ip_prob)
     )
+    # Creating the right child node of tree
     right_node <- if (right_status == 0) fmt(right_ub_sol) else "Infeasible"
-    right_label <- sprintf("%s >= %d", branch_var, var_ceiled)
-    graph <- graph +
+    right_label <- sprintf("%s >= %d", branch_var, dvar_ceiled)
+    tree <- tree +
         vertex(right_node) +
         edge(root, right_node, label = right_label)
 
@@ -95,31 +97,31 @@ branch_bound <- function(upper_bound, ip_prob, graph, root) {
     if (left_status == 0 && right_status == 0) {
         if (left_ub_sol[c("z")] > right_ub_sol[c("z")]) {
             left_ip_prob <- ip_prob %T>%
-                add.constraint(branch_vec, "<=", var_floored)
+                add.constraint(constrs, "<=", dvar_floored)
 
-            branch_bound(left_ub_sol, left_ip_prob, graph, left_node)
+            branch_bound(left_ub_sol, left_ip_prob, tree, left_node)
         } else {
             right_ip_prob <- ip_prob %T>%
-                add.constraint(branch_vec, ">=", var_ceiled)
+                add.constraint(constrs, ">=", dvar_ceiled)
 
-            branch_bound(right_ub_sol, right_ip_prob, graph, right_node)
+            branch_bound(right_ub_sol, right_ip_prob, tree, right_node)
         }
     }
     else if (left_status == 0 && right_status != 0) {
         left_ip_prob <- ip_prob %T>%
-            add.constraint(branch_vec, "<=", var_floored)
+            add.constraint(constrs, "<=", dvar_floored)
 
-        branch_bound(left_ub_sol, left_ip_prob, graph, left_node)
+        branch_bound(left_ub_sol, left_ip_prob, tree, left_node)
     }
     else if (left_status != 0 && right_status == 0) {
         right_ip_prob <- ip_prob %T>%
-            add.constraint(branch_vec, ">=", var_ceiled)
+            add.constraint(constrs, ">=", dvar_ceiled)
 
-        branch_bound(right_ub_sol, right_ip_prob, graph, right_node)
+        branch_bound(right_ub_sol, right_ip_prob, tree, right_node)
     }
     else {
         return(ip_prob)
     }
 }
 
-branch_bound(ub_sol, ip_prob, G, root)
+branch_bound(ub_sol, ip_prob, tree, root)
