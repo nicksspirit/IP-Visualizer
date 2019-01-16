@@ -12,14 +12,24 @@ fmt <- function(sol) {
 }
 
 create_sol <- function(obj_val, dvars) {
-    bounded_sol <- list(
-        z = get.objective(ip_prob),
-        x = get.variables(ip_prob)
-    )
+#' @title Create an Instance of BoundedSolution
+#' @description Constructor function to create an instance of
+#' the S3 class BoundedSolution
+#' @param obj_val The value of the objective function
+#' @param dvars A vector of numeric values for each descision variable of an
+#' integer programming problem
 
-    class(bounded_sol) <- "BoundedSolution"
+  BoundedSolution <- list(
+    z = get.objective(ip_prob),
+    x = get.variables(ip_prob)
+  )
 
-    return(bounded_sol)
+  class(BoundedSolution) <- "BoundedSolution"
+  names(BoundedSolution$x) <- sapply(seq_along(BoundedSolution$x), function(i) {
+    return(sprintf("x%s", i))
+  })
+
+  return(BoundedSolution)
 }
 
 ip_prob <- make.lp(0, 2) %T>%
