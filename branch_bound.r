@@ -11,24 +11,26 @@ fmt <- function(sol) {
     ))
 }
 
+create_sol <- function(obj_val, dvars) {
+    bounded_sol <- list(
+        z = get.objective(ip_prob),
+        x = get.variables(ip_prob)
+    )
+
+    class(bounded_sol) <- "BoundedSolution"
+
+    return(bounded_sol)
+}
+
 ip_prob <- make.lp(0, 2) %T>%
     lp.control(sense = "max") %T>%
     set.objfn(c(8, 5)) %T>%
     add.constraint(c(1, 1), "<=", 6) %T>%
     add.constraint(c(9, 5), "<=", 45)
 
-ip_prob
-
 solve(ip_prob)
 
-get.objective(ip_prob)
-
-get.variables(ip_prob)
-
-ub_sol <- c(z = get.objective(ip_prob), x = get.variables(ip_prob))
-
-ub_sol
-
+ub_sol <- create_sol(get.objective(ip_prob), get.variables(ip_prob))
 root <- fmt(ub_sol)
 G <- make_tree(0, 2) + vertex(root)
 
@@ -69,10 +71,9 @@ branch_bound <- function(upper_bound, ip_prob, graph, root) {
     left_status <- solve(left_ip_prob)
 
     print(sprintf("Left Side Status: %s", ifelse(left_status == 0, "Optimal Solutin Found!", "Infeasible")))
-
-    left_ub_sol <- c(
-        z = get.objective(left_ip_prob),
-        x = get.variables(left_ip_prob)
+    left_ub_sol <- create_sol(
+        get.objective(left_ip_prob),
+        get.variables(left_ip_prob)
     )
 
     left_node <- if (left_status == 0) fmt(left_ub_sol) else "Infeasible"
@@ -98,10 +99,9 @@ branch_bound <- function(upper_bound, ip_prob, graph, root) {
     right_status <- solve(right_ip_prob)
 
     print(sprintf("Right Side Status: %s", ifelse(right_status == 0, "Optimal Solutin Found!", "Infeasible")))
-
-    right_ub_sol <- c(
-        z = get.objective(right_ip_prob),
-        x = get.variables(right_ip_prob)
+    right_ub_sol <- create_sol(
+        get.objective(right_ip_prob),
+        get.variables(right_ip_prob)
     )
 
     right_node <- if (right_status == 0) fmt(right_ub_sol) else "Infeasible"
