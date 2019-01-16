@@ -35,20 +35,9 @@ root <- fmt(ub_sol)
 G <- make_tree(0, 2) + vertex(root)
 
 branch_bound <- function(upper_bound, ip_prob, graph, root) {
-    print(
-        fmt(upper_bound) %>%
-        sprintf("Given Soltuion %s ", .) %>%
-        gsub("\n", " ", .)
-    )
-
     branch_val <- upper_bound %>% extract(c("x1", "x2")) %>% branch_on()
 
     if (branch_val == 0) {
-        print(
-            fmt(upper_bound) %>%
-            sprintf("Final Solution %s ", .) %>%
-            gsub("\n", " ", .)
-        )
         plot(graph,
             layout = layout.reingold.tilford(graph),
             vertex.size = 50,
@@ -64,13 +53,9 @@ branch_bound <- function(upper_bound, ip_prob, graph, root) {
     var_floored <- floor(branch_val)
     var_ceiled <- ceiling(branch_val)
 
-    print(sprintf("Branching On %s = %g", branch_var, branch_val))
-
     # Left Side
     left_ip_prob <- ip_prob %T>% add.constraint(branch_vec, "<=", var_floored)
     left_status <- solve(left_ip_prob)
-
-    print(sprintf("Left Side Status: %s", ifelse(left_status == 0, "Optimal Solutin Found!", "Infeasible")))
     left_ub_sol <- create_sol(
         get.objective(left_ip_prob),
         get.variables(left_ip_prob)
@@ -88,22 +73,13 @@ branch_bound <- function(upper_bound, ip_prob, graph, root) {
         length() %>%
         delete.constraint(left_ip_prob, .)
 
-    print(
-        fmt(left_ub_sol) %>%
-        sprintf("Left side upper bound solution: %s ", .) %>%
-        gsub("\n", " ", .)
-    )
-
     # Right Side
     right_ip_prob <- ip_prob %T>% add.constraint(branch_vec, ">=", var_ceiled)
     right_status <- solve(right_ip_prob)
-
-    print(sprintf("Right Side Status: %s", ifelse(right_status == 0, "Optimal Solutin Found!", "Infeasible")))
     right_ub_sol <- create_sol(
         get.objective(right_ip_prob),
         get.variables(right_ip_prob)
     )
-
     right_node <- if (right_status == 0) fmt(right_ub_sol) else "Infeasible"
     right_label <- sprintf("%s >= %d", branch_var, var_ceiled)
     graph <- graph +
@@ -115,12 +91,6 @@ branch_bound <- function(upper_bound, ip_prob, graph, root) {
         get.constraints() %>%
         length() %>%
         delete.constraint(right_ip_prob, .)
-
-    print(
-        fmt(right_ub_sol) %>%
-        sprintf("Right side upper bound solution: %s ", .) %>%
-        gsub("\n", " ", .)
-    )
 
     if (left_status == 0 && right_status == 0) {
         if (left_ub_sol[c("z")] > right_ub_sol[c("z")]) {
@@ -148,7 +118,6 @@ branch_bound <- function(upper_bound, ip_prob, graph, root) {
         branch_bound(right_ub_sol, right_ip_prob, graph, right_node)
     }
     else {
-        print("Infeasible")
         return(ip_prob)
     }
 }
