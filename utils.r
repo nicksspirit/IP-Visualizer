@@ -13,9 +13,7 @@ get_dvars <- function(bounded_sol) {
 #' @description Get the descision variables from the
 #' solution to a linear relaxed problem
 
-  num_dvars <- length(bounded_sol) - 1
-
-  return(tail(bounded_sol, num_dvars))
+  return(bounded_sol$x)
 }
 
 branch_on <- function(dvars) {
@@ -46,7 +44,7 @@ get_varname <- function(dvars, branch_val) {
   )
 }
 
-create_constr_coeffs <- function(dvars, branch_val) {
+get_constr_coeffs <- function(dvars, branch_val) {
 #' @title Create numeric vector containing the constraint coefficients
 #' @description The vector is the same length and the length of
 #' the descision varialbles dvars.
@@ -57,6 +55,7 @@ create_constr_coeffs <- function(dvars, branch_val) {
 
   coeff_vec <- rep(0, times = length(dvars))
   dvar_index <- match(branch_val, dvars)
+
   coeff_vec[dvar_index] <- 1
 
   return(coeff_vec)
